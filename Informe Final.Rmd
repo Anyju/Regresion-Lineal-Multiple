@@ -1,0 +1,133 @@
+---
+title: "Informe Final"
+author: "Ana Julia Escobar"
+date: "3 de agosto de 2015"
+output: html_document
+---
+### Introducción
+
+Análisis de  nuestro modelo de regresión lineal múltiple. 
+
+
+### Descripción información 
+
+Cargamos nuestras datas
+
+```{r,echo=TRUE,eval=TRUE}
+options(warn=-1)
+library(readxl)
+pob1<-read_excel("poblacion1.xlsx", sheet=1, na=" ")
+pob2<-read_excel("poblacion2.xlsx", sheet=1, na=" ")
+View(pob1)
+str(pob1)
+View(pob2)
+str(pob2)
+```
+Disponemos de `r nrow(pob1)` observaciones de `r ncol(pob1)` variables.
+Disponemos de `r nrow(pob2)` observaciones de `r ncol(pob2)` variables.
+
+Tendremos nuestras datas en una: población.
+```{r,echo=TRUE,eval=TRUE}
+options(warn=-1)
+poblacion <- merge(pob1,pob2,by="identificador",suffixes=c("",""))
+str(poblacion)
+```
+
+### Modelo de regresión lineal simple
+
+Explicaremos  la variable `r names(poblacion)[2]` en función de los  regresores que tengan mayor correlación con nuestra variable dependiente.
+
+```{r,echo=TRUE,eval=TRUE}
+options(warn=-1)
+core <- 3:dim(poblacion)[2]
+core[1] <- NA
+
+
+for(i in 2:dim(poblacion)[2]){
+  if(is.numeric(poblacion[,i])==TRUE){
+    core[i] <- cor(poblacion[,2], poblacion[,i])
+  } else {
+    core[i] <- NA
+  }
+}
+core
+```
+
+Ajustamos un modelo de regresión lineal múltiple para las variables `r names(poblacion)[2]` con  `r names(poblacion)[3]`, `r names(poblacion)[4]`, `r names(poblacion)[7]`
+
+La regresion regresión.
+
+```{r,echo=TRUE,eval=TRUE}
+reg <- lm(poblacion~var.pobl.mayor+menores.18+tasa.crimen, data=poblacion)
+summary(reg)
+```
+
+
+Es decir nuestro modelo resultante estaría dado por la expresión
+$$\hat{`r substring(names(poblacion)[2],1,2)`} = `r reg$coefficients[1]` + `r reg$coefficients[2]`  \hat{`r substring(names(poblacion)[3],1,2)`}+`r reg$coefficients[3]`  \hat{`r substring(names(poblacion)[4],1,2)`} `r reg$coefficients[4]`  \hat{`r substring(names(poblacion)[7],1,2)`}$$
+
+### Interpretación
+__Interpretación modelo:__ 
+Si `r names(poblacion)[3]` se incrementa en una unidad, entonces `r names(poblacion)[2]`
+`r tex <-"aumenta"; if(reg$coefficients[2]<0) (tex<-"disminuye");tex` en promedio `r abs(reg$coefficients[2])` unidades.
+
+
+Si `r names(poblacion)[4]` se incrementa en una unidad, entonces `r names(poblacion)[2]`
+`r tex <-"aumenta"; if(reg$coefficients[3]<0) (tex<-"disminuye");tex` en promedio `r abs(reg$coefficients[3])` unidades._
+
+
+Si `r names(poblacion)[7]` se incrementa en una unidad, entonces `r names(poblacion)[2]`
+`r tex <-"aumenta"; if(reg$coefficients[4]<0) (tex<-"disminuye");tex` en promedio `r abs(reg$coefficients[4])` unidades.
+
+__Interpretación $R^2$:__ 
+
+El modelo de regresión lineal obtenido explica el `r paste(100*summary(reg)$r.squared,"%")` de la variabilidad total.
+
+
+### Pruebas de hipótesis
+
+Para $\beta_4$
+Como $t=`r summary(reg)[[4]][4,3]`$ es `r tex<-"menor"; if(summary(reg)[[4]][4,3]>qt(0.975,(nrow(poblacion)-2))) tex<-"mayor"; tex` que $t_{`r (nrow(poblacion)-2)`}(\frac{\alpha}{2})= `r qt(0.975,(nrow(poblacion)-2))`$
+`r tex<-"no rechazo"; if(summary(reg)[[4]][4,3]>qt(0.975,(nrow(poblacion)-2))) tex<-"rechazo"; tex`
+$H_0: \beta_4=0$.
+
+Para $\beta_3$
+Como $t=`r summary(reg)[[4]][3,3]`$ es `r tex<-"menor"; if(summary(reg)[[4]][3,3]>qt(0.975,(nrow(poblacion)-2))) tex<-"mayor"; tex` que $t_{`r (nrow(poblacion)-2)`}(\frac{\alpha}{2})= `r qt(0.975,(nrow(poblacion)-2))`$
+`r tex<-"no rechazo"; if(summary(reg)[[4]][3,3]>qt(0.975,(nrow(poblacion)-2))) tex<-"rechazo"; tex`
+$H_0: \beta_3=0$.
+
+Para $\beta_2$
+Como $t=`r summary(reg)[[4]][2,3]`$ es `r tex<-"menor"; if(summary(reg)[[4]][2,3]>qt(0.975,(nrow(poblacion)-2))) tex<-"mayor"; tex` que $t_{`r (nrow(poblacion)-2)`}(\frac{\alpha}{2})= `r qt(0.975,(nrow(poblacion)-2))`$
+`r tex<-"no rechazo"; if(summary(reg)[[4]][2,3]>qt(0.975,(nrow(poblacion)-2))) tex<-"rechazo"; tex`
+$H_0: \beta_2=0$.
+
+Para $\beta_1$
+Como $t=`r summary(reg)[[4]][1,3]`$ es `r tex<-"menor"; if(summary(reg)[[4]][1,3]>qt(0.975,(nrow(poblacion)-2))) tex<-"mayor"; tex` que $t_{`r (nrow(poblacion)-2)`}(\frac{\alpha}{2})= `r qt(0.975,(nrow(poblacion)-2))`$
+`r tex<-"no rechazo"; if(summary(reg)[[4]][1,3]>qt(0.975,(nrow(poblacion)-2))) tex<-"rechazo"; tex`
+$H_0: \beta_1=0$.
+
+
+### Análisis de varianza
+
+Realizando la tabla __ANOVA__ tenemos los siguientes resultados:
+```{r,echo=TRUE,eval=TRUE}
+anova <- aov(reg)
+summary(anova)
+
+```
+
+
+### Intervalos de confianza
+```{r}
+confint(reg,level = 0.95)
+```
+
+### Gráficos residuales
+```{r}
+library(DT)
+residuo <- reg[["residuals"]]
+prediccion <- reg[["fitted.values"]]
+hist(residuo,15,col = "purple",border = "pink")
+mean(residuo)
+qqnorm(residuo)
+qqline(residuo,col="pink")
